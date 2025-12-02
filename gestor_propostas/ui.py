@@ -16,10 +16,13 @@ class App(tk.Tk):
 
         self.gestor = gestor
         self.filtro_status_var = tk.StringVar(value="Todos")
+        self.busca_var = tk.StringVar(value="")  # campo de busca
 
         self._criar_widgets()
 
-    # ----- UI Setup ----- #
+    # ==============================
+    #   UI SETUP
+    # ==============================
 
     def _criar_widgets(self):
         # Frame de clientes
@@ -38,7 +41,7 @@ class App(tk.Tk):
         frame_propostas = ttk.LabelFrame(self, text="Propostas")
         frame_propostas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-        # Linha de filtro
+        # Linha de filtro + busca
         frame_filtro = ttk.Frame(frame_propostas)
         frame_filtro.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
@@ -52,6 +55,19 @@ class App(tk.Tk):
         )
         self.combo_filtro_status.pack(side=tk.LEFT, padx=5)
         self.combo_filtro_status.bind("<<ComboboxSelected>>", lambda e: self.atualizar_listas())
+
+        # Campo de busca
+        ttk.Label(frame_filtro, text="Buscar (cliente/título):").pack(side=tk.LEFT, padx=(15, 0))
+        entry_busca = ttk.Entry(frame_filtro, textvariable=self.busca_var, width=30)
+        entry_busca.pack(side=tk.LEFT, padx=5)
+
+        # Enter também dispara a busca
+        entry_busca.bind("<Return>", lambda e: self.atualizar_listas())
+
+        ttk.Button(frame_filtro, text="Buscar", command=self.atualizar_listas)\
+            .pack(side=tk.LEFT, padx=2)
+        ttk.Button(frame_filtro, text="Limpar", command=self.limpar_busca)\
+            .pack(side=tk.LEFT, padx=2)
 
         # Lista de propostas
         self.listbox_propostas = tk.Listbox(frame_propostas, height=10)
@@ -107,23 +123,51 @@ class App(tk.Tk):
         status_bar = ttk.Label(self, textvariable=self.status_var, relief=tk.SUNKEN, anchor="w")
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
+    # ==============================
+    #   FILTROS / LISTAGENS
+    # ==============================
+
+    def _get_propostas_filtradas(self):
+        """Retorna a lista de propostas respeitando:
+        - filtro de status
+        - texto de busca (cliente / título)
+        """
+        propostas = self.gestor.listar_propostas()
+
+        # filtro por status
+        filtro = self.filtro_status_var.get()
+        if filtro != "Todos":
+            propostas = [p for p in propostas if p.status == filtro]
+
+        # filtro por texto (cliente ou título)
+        texto = self.busca_var.get().strip().lower()
+        if texto:
+            propostas = [
+                p for p in propostas
+                if texto in p.titulo.lower()
+                or texto in p.cliente.nome.lower()
+            ]
+
+        return propostas
+
     def atualizar_listas(self):
         # Clientes
         self.listbox_clientes.delete(0, tk.END)
         for c in self.gestor.listar_clientes():
             self.listbox_clientes.insert(tk.END, str(c))
 
-        # Propostas (aplicando filtro)
+        # Propostas (aplicando filtros)
         self.listbox_propostas.delete(0, tk.END)
-        filtro = self.filtro_status_var.get()
-        propostas = self.gestor.listar_propostas()
-        if filtro != "Todos":
-            propostas = [p for p in propostas if p.status == filtro]
+        propostas = self._get_propostas_filtradas()
 
         for p in propostas:
             self.listbox_propostas.insert(tk.END, str(p))
 
+        # Atualiza itens da proposta selecionada (se houver)
         self.atualizar_itens_treeview()
+
+        # Atualiza status bar com total encontrado
+        self.status_var.set(f"{len(propostas)} proposta(s) encontrada(s).")
 
     def atualizar_itens_treeview(self):
         # Limpa a tabela
@@ -146,7 +190,13 @@ class App(tk.Tk):
                 ),
             )
 
-    # ----- Helpers de seleção ----- #
+    def limpar_busca(self):
+        self.busca_var.set("")
+        self.atualizar_listas()
+
+    # ==============================
+    #   HELPERS DE SELEÇÃO
+    # ==============================
 
     def _obter_cliente_selecionado(self) -> Optional[Cliente]:
         idx = self.listbox_clientes.curselection()
@@ -159,16 +209,15 @@ class App(tk.Tk):
         if not idx:
             return None
 
-        filtro = self.filtro_status_var.get()
-        propostas = self.gestor.listar_propostas()
-        if filtro != "Todos":
-            propostas = [p for p in propostas if p.status == filtro]
+        propostas = self._get_propostas_filtradas()
 
         if 0 <= idx[0] < len(propostas):
             return propostas[idx[0]]
         return None
 
-    # ----- Janelas / Ações ----- #
+    # ==============================
+    #   JANELAS / AÇÕES
+    # ==============================
 
     def janela_novo_cliente(self):
         win = tk.Toplevel(self)
