@@ -20,9 +20,6 @@ class App(tk.Tk):
 
         self._criar_widgets()
 
-    # ==============================
-    #   UI SETUP
-    # ==============================
 
     def _criar_widgets(self):
         # Frame de clientes
@@ -114,6 +111,12 @@ class App(tk.Tk):
         ttk.Button(frame_botoes, text="Gerar Excel", command=self.acao_gerar_excel)\
             .grid(row=0, column=5, padx=2, pady=2, sticky="ew")
 
+        # Linha de botões de edição
+        ttk.Button(frame_botoes, text="Editar Proposta", command=self.janela_editar_proposta)\
+            .grid(row=1, column=0, padx=2, pady=2, sticky="ew")
+        ttk.Button(frame_botoes, text="Editar Item", command=self.janela_editar_item)\
+            .grid(row=1, column=1, padx=2, pady=2, sticky="ew")
+
         for i in range(6):
             frame_botoes.columnconfigure(i, weight=1)
 
@@ -123,9 +126,6 @@ class App(tk.Tk):
         status_bar = ttk.Label(self, textvariable=self.status_var, relief=tk.SUNKEN, anchor="w")
         status_bar.pack(side=tk.BOTTOM, fill=tk.X)
 
-    # ==============================
-    #   FILTROS / LISTAGENS
-    # ==============================
 
     def _get_propostas_filtradas(self):
         """Retorna a lista de propostas respeitando:
@@ -194,10 +194,6 @@ class App(tk.Tk):
         self.busca_var.set("")
         self.atualizar_listas()
 
-    # ==============================
-    #   HELPERS DE SELEÇÃO
-    # ==============================
-
     def _obter_cliente_selecionado(self) -> Optional[Cliente]:
         idx = self.listbox_clientes.curselection()
         if not idx:
@@ -215,9 +211,6 @@ class App(tk.Tk):
             return propostas[idx[0]]
         return None
 
-    # ==============================
-    #   JANELAS / AÇÕES
-    # ==============================
 
     def janela_novo_cliente(self):
         win = tk.Toplevel(self)
@@ -317,53 +310,72 @@ class App(tk.Tk):
 
         ttk.Button(win, text="Criar", command=salvar).pack(pady=10)
 
-    def janela_adicionar_itens(self):
+    def janela_editar_proposta(self):
         proposta = self._obter_proposta_selecionada()
         if not proposta:
-            messagebox.showinfo("Informação", "Selecione uma proposta.")
+            messagebox.showinfo("Informação", "Selecione uma proposta para editar.")
             return
 
         win = tk.Toplevel(self)
-        win.title(f"Adicionar Itens - Proposta #{proposta.id}")
-        win.geometry("450x260")
+        win.title(f"Editar Proposta #{proposta.id}")
+        win.geometry("420x280")
 
-        ttk.Label(win, text=f"Proposta #{proposta.id} - {proposta.titulo}")\
+        ttk.Label(win, text=f"Cliente: {proposta.cliente.nome}")\
             .pack(anchor="w", padx=10, pady=5)
 
-        ttk.Label(win, text="Descrição do item:").pack(anchor="w", padx=10, pady=5)
-        entry_desc = ttk.Entry(win)
-        entry_desc.pack(fill=tk.X, padx=10)
+        ttk.Label(win, text="Título da proposta:").pack(anchor="w", padx=10, pady=5)
+        entry_titulo = ttk.Entry(win)
+        entry_titulo.pack(fill=tk.X, padx=10)
+        entry_titulo.insert(0, proposta.titulo)
 
-        ttk.Label(win, text="Quantidade:").pack(anchor="w", padx=10, pady=5)
-        entry_qtd = ttk.Entry(win)
-        entry_qtd.pack(fill=tk.X, padx=10)
+        ttk.Label(win, text="Responsável (opcional):").pack(anchor="w", padx=10, pady=5)
+        entry_responsavel = ttk.Entry(win)
+        entry_responsavel.pack(fill=tk.X, padx=10)
+        entry_responsavel.insert(0, proposta.responsavel or "")
 
-        ttk.Label(win, text="Valor unitário (R$):").pack(anchor="w", padx=10, pady=5)
-        entry_valor = ttk.Entry(win)
-        entry_valor.pack(fill=tk.X, padx=10)
+        ttk.Label(win, text="Validade (AAAA-MM-DD) [opcional]:").pack(anchor="w", padx=10, pady=5)
+        entry_validade = ttk.Entry(win)
+        entry_validade.pack(fill=tk.X, padx=10)
+        if proposta.validade:
+            entry_validade.insert(0, proposta.validade.strftime("%Y-%m-%d"))
 
-        def adicionar():
-            desc = entry_desc.get().strip()
-            if not desc:
-                messagebox.showwarning("Atenção", "Descrição é obrigatória.")
+        ttk.Label(win, text="Condições de pagamento (opcional):").pack(anchor="w", padx=10, pady=5)
+        entry_cond = ttk.Entry(win)
+        entry_cond.pack(fill=tk.X, padx=10)
+        entry_cond.insert(0, proposta.condicoes_pagamento or "")
+
+        def salvar():
+            titulo = entry_titulo.get().strip()
+            if not titulo:
+                messagebox.showwarning("Atenção", "Título não pode ficar vazio.")
                 return
-            try:
-                qtd = int(entry_qtd.get().strip())
-                valor = float(entry_valor.get().strip().replace(",", "."))
-            except ValueError:
-                messagebox.showwarning("Atenção", "Quantidade e valor devem ser numéricos.")
-                return
 
-            item = ItemProposta(desc, qtd, valor)
-            proposta.adicionar_item(item)
+            responsavel = entry_responsavel.get().strip()
+            cond_pag = entry_cond.get().strip()
+
+            validade_str = entry_validade.get().strip()
+            validade = None
+            if validade_str:
+                try:
+                    validade = datetime.strptime(validade_str, "%Y-%m-%d").date()
+                except ValueError:
+                    messagebox.showwarning(
+                        "Atenção",
+                        "Data de validade inválida. Use o formato AAAA-MM-DD (ex: 2025-12-31)."
+                    )
+                    return
+
+            proposta.titulo = titulo
+            proposta.responsavel = responsavel
+            proposta.validade = validade
+            proposta.condicoes_pagamento = cond_pag
+
             self.atualizar_listas()
-            self.status_var.set(f"Item adicionado à Proposta #{proposta.id}.")
-            entry_desc.delete(0, tk.END)
-            entry_qtd.delete(0, tk.END)
-            entry_valor.delete(0, tk.END)
+            win.destroy()
+            self.status_var.set(f"Proposta #{proposta.id} atualizada com sucesso.")
 
-        ttk.Button(win, text="Adicionar Item", command=adicionar).pack(pady=10)
-
+        ttk.Button(win, text="Salvar alterações", command=salvar).pack(pady=10)
+        
     def janela_desconto(self):
         proposta = self._obter_proposta_selecionada()
         if not proposta:
@@ -480,6 +492,142 @@ class App(tk.Tk):
 
         self.atualizar_listas()
         self.status_var.set(f"Proposta #{proposta.id} duplicada como #{nova.id}.")
+
+
+    def janela_adicionar_itens(self):
+        proposta = self._obter_proposta_selecionada()
+        if not proposta:
+            messagebox.showinfo("Informação", "Selecione uma proposta.")
+            return
+
+        win = tk.Toplevel(self)
+        win.title(f"Adicionar Itens - Proposta #{proposta.id}")
+        win.geometry("450x260")
+
+        ttk.Label(win, text=f"Proposta #{proposta.id} - {proposta.titulo}")\
+            .pack(anchor="w", padx=10, pady=5)
+
+        ttk.Label(win, text="Descrição do item:").pack(anchor="w", padx=10, pady=5)
+        entry_desc = ttk.Entry(win)
+        entry_desc.pack(fill=tk.X, padx=10)
+
+        ttk.Label(win, text="Quantidade:").pack(anchor="w", padx=10, pady=5)
+        entry_qtd = ttk.Entry(win)
+        entry_qtd.pack(fill=tk.X, padx=10)
+
+        ttk.Label(win, text="Valor unitário (R$):").pack(anchor="w", padx=10, pady=5)
+        entry_valor = ttk.Entry(win)
+        entry_valor.pack(fill=tk.X, padx=10)
+
+        def adicionar():
+            desc = entry_desc.get().strip()
+            if not desc:
+                messagebox.showwarning("Atenção", "Descrição é obrigatória.")
+                return
+            try:
+                qtd = int(entry_qtd.get().strip())
+                valor = float(entry_valor.get().strip().replace(",", "."))
+            except ValueError:
+                messagebox.showwarning("Atenção", "Quantidade e valor devem ser numéricos.")
+                return
+
+            item = ItemProposta(desc, qtd, valor)
+            proposta.adicionar_item(item)
+            self.atualizar_listas()
+            self.status_var.set(f"Item adicionado à Proposta #{proposta.id}.")
+            entry_desc.delete(0, tk.END)
+            entry_qtd.delete(0, tk.END)
+            entry_valor.delete(0, tk.END)
+
+        ttk.Button(win, text="Adicionar Item", command=adicionar).pack(pady=10)
+
+    def janela_editar_item(self):
+        proposta = self._obter_proposta_selecionada()
+        if not proposta:
+            messagebox.showinfo("Informação", "Selecione uma proposta.")
+            return
+
+        if not proposta.itens:
+            messagebox.showinfo("Informação", "Essa proposta ainda não possui itens.")
+            return
+
+        selecao_tree = self.tree_itens.selection()
+        if not selecao_tree:
+            messagebox.showinfo("Informação", "Selecione um item na lista para editar.")
+            return
+
+        item_id = selecao_tree[0]
+        indice_item = self.tree_itens.index(item_id)
+
+        if not (0 <= indice_item < len(proposta.itens)):
+            messagebox.showerror("Erro", "Não foi possível localizar o item selecionado.")
+            return
+
+        item = proposta.itens[indice_item]
+
+        win = tk.Toplevel(self)
+        win.title(f"Editar Item #{indice_item + 1} - Proposta #{proposta.id}")
+        win.geometry("450x260")
+
+        ttk.Label(win, text=f"Proposta #{proposta.id} - {proposta.titulo}")\
+            .pack(anchor="w", padx=10, pady=5)
+
+        ttk.Label(win, text="Descrição do item:").pack(anchor="w", padx=10, pady=5)
+        entry_desc = ttk.Entry(win)
+        entry_desc.pack(fill=tk.X, padx=10)
+        entry_desc.insert(0, item.descricao)
+
+        ttk.Label(win, text="Quantidade:").pack(anchor="w", padx=10, pady=5)
+        entry_qtd = ttk.Entry(win)
+        entry_qtd.pack(fill=tk.X, padx=10)
+        entry_qtd.insert(0, str(item.quantidade))
+
+        ttk.Label(win, text="Valor unitário (R$):").pack(anchor="w", padx=10, pady=5)
+        entry_valor = ttk.Entry(win)
+        entry_valor.pack(fill=tk.X, padx=10)
+        entry_valor.insert(0, f"{item.valor_unitario:.2f}".replace(".", ","))
+
+        def salvar():
+            desc = entry_desc.get().strip()
+            if not desc:
+                messagebox.showwarning("Atenção", "Descrição é obrigatória.")
+                return
+            try:
+                qtd = int(entry_qtd.get().strip())
+                valor = float(entry_valor.get().strip().replace(",", "."))
+            except ValueError:
+                messagebox.showwarning("Atenção", "Quantidade e valor devem ser numéricos.")
+                return
+
+            item.descricao = desc
+            item.quantidade = qtd
+            item.valor_unitario = valor
+
+            self.atualizar_listas()
+            self.status_var.set(
+                f"Item #{indice_item + 1} da Proposta #{proposta.id} atualizado com sucesso."
+            )
+            win.destroy()
+
+        def remover():
+            if messagebox.askyesno(
+                "Confirmar remoção",
+                f"Remover o item #{indice_item + 1} desta proposta?"
+            ):
+                del proposta.itens[indice_item]
+                self.atualizar_listas()
+                self.status_var.set(
+                    f"Item #{indice_item + 1} removido da Proposta #{proposta.id}."
+                )
+                win.destroy()
+
+        frame_botoes = ttk.Frame(win)
+        frame_botoes.pack(pady=10)
+
+        ttk.Button(frame_botoes, text="Salvar alterações", command=salvar)\
+            .grid(row=0, column=0, padx=5)
+        ttk.Button(frame_botoes, text="Remover Item", command=remover)\
+            .grid(row=0, column=1, padx=5)
 
     def acao_gerar_excel(self):
         if not self.gestor.listar_propostas():
