@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Novo Cliente{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">Novo Cliente</h1>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="nome" class="form-label">Nome</label>
+      <input type="text" class="form-control" id="nome" name="nome" required>
+    </div>
+
+    <div class="mb-3">
+      <label for="documento" class="form-label">Documento (opcional)</label>
+      <input type="text" class="form-control" id="documento" name="documento">
+    </div>
+
+    <div class="mb-3">
+      <label for="contato" class="form-label">Contato (opcional)</label>
+      <input type="text" class="form-control" id="contato" name="contato">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="{{ url_for('clientes') }}" class="btn btn-outline-secondary">Cancelar</a>
+  </form>
+{% endblock %}

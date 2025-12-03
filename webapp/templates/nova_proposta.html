@@ -1,0 +1,42 @@
+<!-- webapp/templates/nova_proposta.html -->
+{% extends "base.html" %}
+
+{% block title %}Nova Proposta{% endblock %}
+
+{% block content %}
+  <h1 class="h3 mb-3">Nova Proposta</h1>
+
+  <form method="post">
+    <div class="mb-3">
+      <label for="cliente_id" class="form-label">Cliente</label>
+      <select name="cliente_id" id="cliente_id" class="form-select" required>
+        {% for c in clientes %}
+          <option value="{{ c.id }}">{{ c.nome }} ({{ c.documento }})</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="titulo" class="form-label">Título da proposta</label>
+      <input type="text" class="form-control" id="titulo" name="titulo">
+    </div>
+
+    <div class="mb-3">
+      <label for="responsavel" class="form-label">Responsável</label>
+      <input type="text" class="form-control" id="responsavel" name="responsavel">
+    </div>
+
+    <div class="mb-3">
+      <label for="validade" class="form-label">Validade (AAAA-MM-DD)</label>
+      <input type="text" class="form-control" id="validade" name="validade" placeholder="2025-12-31">
+    </div>
+
+    <div class="mb-3">
+      <label for="condicoes_pagamento" class="form-label">Condições de pagamento</label>
+      <input type="text" class="form-control" id="condicoes_pagamento" name="condicoes_pagamento">
+    </div>
+
+    <button type="submit" class="btn btn-primary">Criar Proposta</button>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary">Cancelar</a>
+  </form>
+{% endblock %}

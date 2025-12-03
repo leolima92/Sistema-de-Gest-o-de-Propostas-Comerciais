@@ -1,0 +1,118 @@
+<!-- webapp/templates/proposta_detalhe.html -->
+{% extends "base.html" %}
+
+{% block title %}Proposta #{{ proposta.id }}{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between mb-3">
+    <div>
+      <h1 class="h3 mb-0">Proposta #{{ proposta.id }} - {{ proposta.titulo }}</h1>
+      <small class="text-muted">
+        Cliente: {{ proposta.cliente.nome }} |
+        Status: {{ proposta.status }} |
+        Total: R$ {{ "%.2f"|format(proposta.calcular_total()) }}
+      </small>
+    </div>
+    <div class="text-end">
+      <a href="{{ url_for('download_pdf', pid=proposta.id) }}" class="btn btn-sm btn-outline-secondary">
+        PDF
+      </a>
+      <a href="{{ url_for('download_excel', pid=proposta.id) }}" class="btn btn-sm btn-outline-secondary">
+        Excel (todas)
+      </a>
+      <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
+        Voltar
+      </a>
+    </div>
+  </div>
+
+  <hr>
+
+  <h2 class="h5">Itens</h2>
+
+  {% if proposta.itens %}
+    <table class="table table-sm table-striped">
+      <thead>
+        <tr>
+          <th>Descrição</th>
+          <th class="text-end">Qtd</th>
+          <th class="text-end">Unitário</th>
+          <th class="text-end">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in proposta.itens %}
+          <tr>
+            <td>{{ item.descricao }}</td>
+            <td class="text-end">{{ item.quantidade }}</td>
+            <td class="text-end">R$ {{ "%.2f"|format(item.valor_unitario) }}</td>
+            <td class="text-end">R$ {{ "%.2f"|format(item.total) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Nenhum item adicionado ainda.</p>
+  {% endif %}
+
+  <div class="card mt-3 mb-3">
+    <div class="card-body">
+      <h5 class="card-title">Adicionar item</h5>
+      <form method="post" action="{{ url_for('add_item', pid=proposta.id) }}">
+        <div class="row g-2">
+          <div class="col-md-6">
+            <input type="text" name="descricao" class="form-control" placeholder="Descrição" required>
+          </div>
+          <div class="col-md-2">
+            <input type="number" name="quantidade" class="form-control" placeholder="Qtd" required>
+          </div>
+          <div class="col-md-2">
+            <input type="text" name="valor_unitario" class="form-control" placeholder="Valor (R$)" required>
+          </div>
+          <div class="col-md-2 d-grid">
+            <button type="submit" class="btn btn-primary">Adicionar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card mt-3">
+    <div class="card-body">
+      <h5 class="card-title">Desconto</h5>
+      <p class="card-text">
+        Subtotal: R$ {{ "%.2f"|format(proposta.calcular_subtotal()) }} <br>
+        Desconto atual:
+        {% if proposta.tipo_desconto == '%' %}
+          {{ "%.2f"|format(proposta.desconto_percentual) }}%
+        {% elif proposta.tipo_desconto == 'R' %}
+          R$ {{ "%.2f"|format(proposta.desconto_valor) }}
+        {% else %}
+          nenhum
+        {% endif %}
+        <br>
+        Total com desconto: <strong>R$ {{ "%.2f"|format(proposta.calcular_total()) }}</strong>
+      </p>
+
+      <form method="post" action="{{ url_for('aplicar_desconto', pid=proposta.id) }}">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-3">
+            <label class="form-label">Tipo</label>
+            <select name="tipo" class="form-select">
+              <option value="nenhum">Nenhum</option>
+              <option value="%" {% if proposta.tipo_desconto == '%' %}selected{% endif %}>Percentual (%)</option>
+              <option value="R" {% if proposta.tipo_desconto == 'R' %}selected{% endif %}>Valor (R$)</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Valor</label>
+            <input type="text" name="valor" class="form-control" placeholder="Ex: 10 ou 150,00">
+          </div>
+          <div class="col-md-3 d-grid">
+            <button type="submit" class="btn btn-primary">Aplicar</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+{% endblock %}

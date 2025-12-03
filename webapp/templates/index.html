@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Propostas - Gestor{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Propostas</h1>
+    <a href="{{ url_for('nova_proposta') }}" class="btn btn-primary">
+      Nova Proposta
+    </a>
+  </div>
+
+  {% if propostas %}
+    <table class="table table-striped table-hover align-middle">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Título</th>
+          <th>Cliente</th>
+          <th>Status</th>
+          <th>Total</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in propostas %}
+          <tr>
+            <td>{{ p.id }}</td>
+            <td>{{ p.titulo }}</td>
+            <td>{{ p.cliente.nome }}</td>
+            <td>{{ p.status }}</td>
+            <td>R$ {{ "%.2f"|format(p.calcular_total()) }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('proposta_detalhe', pid=p.id) }}" class="btn btn-sm btn-outline-secondary">
+                Detalhes
+              </a>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>Nenhuma proposta cadastrada ainda.</p>
+  {% endif %}
+{% endblock %}

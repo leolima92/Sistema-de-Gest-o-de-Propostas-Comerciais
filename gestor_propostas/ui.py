@@ -7,6 +7,7 @@ from tkinter import ttk, messagebox, filedialog
 from .models import GestorPropostas, Cliente, Proposta, ItemProposta
 from .excel_report import ExcelReportGenerator
 from .pdf_report import PdfReportGenerator
+from .storage import StorageManager
 
 
 class App(tk.Tk):
@@ -16,11 +17,12 @@ class App(tk.Tk):
         self.geometry("1000x550")
 
         self.gestor = gestor
-        self.usuario_logado = usuario_logado  
+        self.usuario_logado = usuario_logado 
         self.filtro_status_var = tk.StringVar(value="Todos")
-        self.busca_var = tk.StringVar(value="")
+        self.busca_var = tk.StringVar(value="")  
 
         self._criar_widgets()
+
 
     def _criar_widgets(self):
         frame_clientes = ttk.LabelFrame(self, text="Clientes")
@@ -34,9 +36,11 @@ class App(tk.Tk):
         )
         btn_novo_cliente.pack(side=tk.TOP, fill=tk.X, padx=5, pady=2)
 
+        
         frame_propostas = ttk.LabelFrame(self, text="Propostas")
         frame_propostas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
 
+  
         frame_filtro = ttk.Frame(frame_propostas)
         frame_filtro.pack(side=tk.TOP, fill=tk.X, padx=5, pady=5)
 
@@ -51,9 +55,11 @@ class App(tk.Tk):
         self.combo_filtro_status.pack(side=tk.LEFT, padx=5)
         self.combo_filtro_status.bind("<<ComboboxSelected>>", lambda e: self.atualizar_listas())
 
+        
         ttk.Label(frame_filtro, text="Buscar (cliente/título):").pack(side=tk.LEFT, padx=(15, 0))
         entry_busca = ttk.Entry(frame_filtro, textvariable=self.busca_var, width=30)
         entry_busca.pack(side=tk.LEFT, padx=5)
+
 
         entry_busca.bind("<Return>", lambda e: self.atualizar_listas())
 
@@ -61,7 +67,7 @@ class App(tk.Tk):
             .pack(side=tk.LEFT, padx=2)
         ttk.Button(frame_filtro, text="Limpar", command=self.limpar_busca)\
             .pack(side=tk.LEFT, padx=2)
-            
+
         self.listbox_propostas = tk.Listbox(frame_propostas, height=10)
         self.listbox_propostas.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=5, pady=5)
         self.listbox_propostas.bind("<<ListboxSelect>>", lambda e: self.atualizar_itens_treeview())
@@ -124,6 +130,7 @@ class App(tk.Tk):
 
     def _get_propostas_filtradas(self):
         propostas = self.gestor.listar_propostas()
+
         filtro = self.filtro_status_var.get()
         if filtro != "Todos":
             propostas = [p for p in propostas if p.status == filtro]
@@ -139,19 +146,19 @@ class App(tk.Tk):
         return propostas
 
     def atualizar_listas(self):
+
         self.listbox_clientes.delete(0, tk.END)
         for c in self.gestor.listar_clientes():
             self.listbox_clientes.insert(tk.END, str(c))
-            
+
         self.listbox_propostas.delete(0, tk.END)
         propostas = self._get_propostas_filtradas()
 
         for p in propostas:
             self.listbox_propostas.insert(tk.END, str(p))
 
-       
         self.atualizar_itens_treeview()
-    
+        
         self.status_var.set(f"{len(propostas)} proposta(s) encontrada(s).")
 
     def atualizar_itens_treeview(self):
@@ -177,7 +184,6 @@ class App(tk.Tk):
     def limpar_busca(self):
         self.busca_var.set("")
         self.atualizar_listas()
-
 
     def _obter_cliente_selecionado(self) -> Optional[Cliente]:
         idx = self.listbox_clientes.curselection()
@@ -220,7 +226,10 @@ class App(tk.Tk):
                 return
             doc = entry_doc.get().strip()
             contato = entry_contato.get().strip()
-            self.gestor.criar_cliente(nome, doc, contato)
+
+            cliente = self.gestor.criar_cliente(nome, doc, contato)
+            StorageManager.salvar_ou_atualizar_cliente(cliente)
+
             self.atualizar_listas()
             win.destroy()
             self.status_var.set(f"Cliente '{nome}' criado com sucesso.")
@@ -288,6 +297,10 @@ class App(tk.Tk):
                 responsavel=responsavel,
                 condicoes_pagamento=cond_pag,
             )
+
+            StorageManager.salvar_ou_atualizar_proposta(prop)
+            StorageManager.sincronizar_itens_proposta(prop)
+
             self.atualizar_listas()
             win.destroy()
             self.status_var.set(f"Proposta #{prop.id} criada para {cliente.nome}.")
@@ -354,6 +367,8 @@ class App(tk.Tk):
             proposta.validade = validade
             proposta.condicoes_pagamento = cond_pag
 
+            StorageManager.salvar_ou_atualizar_proposta(proposta)
+
             self.atualizar_listas()
             win.destroy()
             self.status_var.set(f"Proposta #{proposta.id} atualizada com sucesso.")
@@ -387,6 +402,9 @@ class App(tk.Tk):
             novo_status = combo_status.get()
             try:
                 proposta.alterar_status(novo_status)
+                
+                StorageManager.salvar_ou_atualizar_proposta(proposta)
+
                 self.atualizar_listas()
                 self.status_var.set(
                     f"Status da Proposta #{proposta.id} alterado para '{novo_status}'."
@@ -447,6 +465,8 @@ class App(tk.Tk):
                     self.status_var.set(
                         f"Desconto de R$ {valor:.2f} aplicado na Proposta #{proposta.id}."
                     )
+    
+            StorageManager.salvar_ou_atualizar_proposta(proposta)
 
             self.atualizar_listas()
             win.destroy()
@@ -473,6 +493,9 @@ class App(tk.Tk):
         for item in proposta.itens:
             novo_item = ItemProposta(item.descricao, item.quantidade, item.valor_unitario)
             nova.adicionar_item(novo_item)
+
+        StorageManager.salvar_ou_atualizar_proposta(nova)
+        StorageManager.sincronizar_itens_proposta(nova)
 
         self.atualizar_listas()
         self.status_var.set(f"Proposta #{proposta.id} duplicada como #{nova.id}.")
@@ -516,6 +539,10 @@ class App(tk.Tk):
 
             item = ItemProposta(desc, qtd, valor)
             proposta.adicionar_item(item)
+            
+            StorageManager.sincronizar_itens_proposta(proposta)
+            StorageManager.salvar_ou_atualizar_proposta(proposta)
+
             self.atualizar_listas()
             self.status_var.set(f"Item adicionado à Proposta #{proposta.id}.")
             entry_desc.delete(0, tk.END)
@@ -586,6 +613,10 @@ class App(tk.Tk):
             item.quantidade = qtd
             item.valor_unitario = valor
 
+            # sincroniza itens atualizados no banco
+            StorageManager.sincronizar_itens_proposta(proposta)
+            StorageManager.salvar_ou_atualizar_proposta(proposta)
+
             self.atualizar_listas()
             self.status_var.set(
                 f"Item #{indice_item + 1} da Proposta #{proposta.id} atualizado com sucesso."
@@ -598,6 +629,11 @@ class App(tk.Tk):
                 f"Remover o item #{indice_item + 1} desta proposta?"
             ):
                 del proposta.itens[indice_item]
+
+                # sincroniza itens após remoção
+                StorageManager.sincronizar_itens_proposta(proposta)
+                StorageManager.salvar_ou_atualizar_proposta(proposta)
+
                 self.atualizar_listas()
                 self.status_var.set(
                     f"Item #{indice_item + 1} removido da Proposta #{proposta.id}."
