@@ -1,37 +1,60 @@
-<!-- webapp/templates/proposta_detalhe.html -->
 {% extends "base.html" %}
 
-{% block title %}Proposta #{{ proposta.id }}{% endblock %}
+{% block title %}Proposta #{{ proposta.id }} - Gestor de Propostas{% endblock %}
 
 {% block content %}
-  <div class="d-flex justify-content-between mb-3">
+  <!-- Cabeçalho da proposta -->
+  <div class="d-flex justify-content-between align-items-start mb-3">
     <div>
-      <h1 class="h3 mb-0">Proposta #{{ proposta.id }} - {{ proposta.titulo }}</h1>
-      <small class="text-muted">
-        Cliente: {{ proposta.cliente.nome }} |
-        Status: {{ proposta.status }} |
-        Total: R$ {{ "%.2f"|format(proposta.calcular_total()) }}
-      </small>
+      <h1 class="h4 mb-1">
+        Proposta #{{ proposta.id }} - {{ proposta.titulo }}
+      </h1>
+      <p class="mb-1">
+        <strong>Cliente:</strong> {{ proposta.cliente.nome }}
+        | <strong>Status:</strong> {{ proposta.status }}
+        | <strong>Total:</strong> R$ {{ "%.2f"|format(proposta.calcular_total()) }}
+      </p>
+      {% if proposta.validade %}
+        <p class="mb-0 text-muted">
+          <strong>Validade:</strong> {{ proposta.validade.strftime("%d/%m/%Y") }}
+        </p>
+      {% endif %}
+      {% if proposta.responsavel %}
+        <p class="mb-0 text-muted">
+          <strong>Responsável:</strong> {{ proposta.responsavel }}
+        </p>
+      {% endif %}
     </div>
-    <div class="text-end">
-      <a href="{{ url_for('download_pdf', pid=proposta.id) }}" class="btn btn-sm btn-outline-secondary">
-        PDF
+
+    <div class="d-flex flex-column flex-md-row gap-2">
+      <!-- Botão enviar proposta -->
+      <form method="post"
+            action="{{ url_for('enviar_proposta', pid=proposta.id) }}"
+            onsubmit="return confirm('Confirmar envio da Proposta #{{ proposta.id }}?');">
+        <button type="submit"
+                class="btn btn-primary"
+                {% if proposta.status in ['enviada','aceita','recusada','cancelada'] %}disabled{% endif %}>
+          Enviar proposta
+        </button>
+      </form>
+
+      <!-- (opcional) Botões de PDF/Excel -->
+      <a href="{{ url_for('download_pdf', pid=proposta.id) }}"
+         class="btn btn-outline-secondary">
+        Baixar PDF
       </a>
-      <a href="{{ url_for('download_excel', pid=proposta.id) }}" class="btn btn-sm btn-outline-secondary">
-        Excel (todas)
-      </a>
-      <a href="{{ url_for('index') }}" class="btn btn-sm btn-outline-secondary">
-        Voltar
+      <a href="{{ url_for('download_excel', pid=proposta.id) }}"
+         class="btn btn-outline-secondary">
+        Exportar Excel
       </a>
     </div>
   </div>
 
-  <hr>
-
-  <h2 class="h5">Itens</h2>
+  <!-- Itens -->
+  <h2 class="h5 mt-4">Itens</h2>
 
   {% if proposta.itens %}
-    <table class="table table-sm table-striped">
+    <table class="table table-striped table-hover align-middle mb-4">
       <thead>
         <tr>
           <th>Descrição</th>
@@ -55,64 +78,95 @@
     <p>Nenhum item adicionado ainda.</p>
   {% endif %}
 
-  <div class="card mt-3 mb-3">
+  <!-- Adicionar item -->
+  <div class="card mb-4">
     <div class="card-body">
-      <h5 class="card-title">Adicionar item</h5>
-      <form method="post" action="{{ url_for('add_item', pid=proposta.id) }}">
-        <div class="row g-2">
-          <div class="col-md-6">
-            <input type="text" name="descricao" class="form-control" placeholder="Descrição" required>
-          </div>
-          <div class="col-md-2">
-            <input type="number" name="quantidade" class="form-control" placeholder="Qtd" required>
-          </div>
-          <div class="col-md-2">
-            <input type="text" name="valor_unitario" class="form-control" placeholder="Valor (R$)" required>
-          </div>
-          <div class="col-md-2 d-grid">
-            <button type="submit" class="btn btn-primary">Adicionar</button>
-          </div>
+      <h2 class="h5 mb-3">Adicionar item</h2>
+      <form method="post" action="{{ url_for('add_item', pid=proposta.id) }}" class="row g-2">
+        <div class="col-md-6">
+          <input type="text"
+                 name="descricao"
+                 class="form-control"
+                 placeholder="Descrição"
+                 required>
+        </div>
+        <div class="col-md-2">
+          <input type="number"
+                 name="quantidade"
+                 class="form-control"
+                 placeholder="Qtd"
+                 min="1"
+                 required>
+        </div>
+        <div class="col-md-2">
+          <input type="text"
+                 name="valor_unitario"
+                 class="form-control"
+                 placeholder="Valor (R$)"
+                 required>
+        </div>
+        <div class="col-md-2 d-grid">
+          <button type="submit" class="btn btn-primary">Adicionar</button>
         </div>
       </form>
     </div>
   </div>
 
-  <div class="card mt-3">
+  <!-- Desconto -->
+  <div class="card mb-4">
     <div class="card-body">
-      <h5 class="card-title">Desconto</h5>
-      <p class="card-text">
-        Subtotal: R$ {{ "%.2f"|format(proposta.calcular_subtotal()) }} <br>
+      <h2 class="h5 mb-3">Desconto</h2>
+
+      <p class="mb-1">
+        Subtotal:
+        <strong>R$ {{ "%.2f"|format(proposta.calcular_subtotal()) }}</strong>
+      </p>
+      <p class="mb-1">
         Desconto atual:
         {% if proposta.tipo_desconto == '%' %}
-          {{ "%.2f"|format(proposta.desconto_percentual) }}%
+          <strong>{{ "%.2f"|format(proposta.desconto_percentual) }}%</strong>
         {% elif proposta.tipo_desconto == 'R' %}
-          R$ {{ "%.2f"|format(proposta.desconto_valor) }}
+          <strong>R$ {{ "%.2f"|format(proposta.desconto_valor) }}</strong>
         {% else %}
-          nenhum
+          <strong>Nenhum</strong>
         {% endif %}
-        <br>
-        Total com desconto: <strong>R$ {{ "%.2f"|format(proposta.calcular_total()) }}</strong>
+      </p>
+      <p class="mb-3">
+        Total com desconto:
+        <strong>R$ {{ "%.2f"|format(proposta.calcular_total()) }}</strong>
       </p>
 
-      <form method="post" action="{{ url_for('aplicar_desconto', pid=proposta.id) }}">
-        <div class="row g-2 align-items-end">
-          <div class="col-md-3">
-            <label class="form-label">Tipo</label>
-            <select name="tipo" class="form-select">
-              <option value="nenhum">Nenhum</option>
-              <option value="%" {% if proposta.tipo_desconto == '%' %}selected{% endif %}>Percentual (%)</option>
-              <option value="R" {% if proposta.tipo_desconto == 'R' %}selected{% endif %}>Valor (R$)</option>
-            </select>
-          </div>
-          <div class="col-md-3">
-            <label class="form-label">Valor</label>
-            <input type="text" name="valor" class="form-control" placeholder="Ex: 10 ou 150,00">
-          </div>
-          <div class="col-md-3 d-grid">
-            <button type="submit" class="btn btn-primary">Aplicar</button>
-          </div>
+      <form method="post" action="{{ url_for('aplicar_desconto', pid=proposta.id) }}" class="row g-2 align-items-end">
+        <div class="col-md-3">
+          <label class="form-label">Tipo</label>
+          <select name="tipo" class="form-select">
+            <option value="nenhum">Nenhum</option>
+            <option value="%" {% if proposta.tipo_desconto == '%' %}selected{% endif %}>
+              Percentual (%)
+            </option>
+            <option value="R" {% if proposta.tipo_desconto == 'R' %}selected{% endif %}>
+              Valor (R$)
+            </option>
+          </select>
+        </div>
+
+        <div class="col-md-5">
+          <label class="form-label">Valor</label>
+          <input type="text"
+                 name="valor"
+                 class="form-control"
+                 placeholder="Ex: 10 ou 150,00">
+        </div>
+
+        <div class="col-md-4 d-grid">
+          <label class="form-label">&nbsp;</label>
+          <button type="submit" class="btn btn-primary">Aplicar</button>
         </div>
       </form>
     </div>
   </div>
+
+  <a href="{{ url_for('index') }}" class="btn btn-link">
+    Voltar para a lista de propostas
+  </a>
 {% endblock %}

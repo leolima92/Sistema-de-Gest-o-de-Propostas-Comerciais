@@ -116,7 +116,8 @@ def index():
     q = request.args.get("q", "").strip().lower()
     status = request.args.get("status", "").strip()
 
-    propostas = gestor.listar_propostas()
+    todas_propostas = gestor.listar_propostas()
+    propostas = todas_propostas
 
     if status:
         propostas = [p for p in propostas if p.status == status]
@@ -126,7 +127,15 @@ def index():
             p for p in propostas
             if q in p.titulo.lower() or q in p.cliente.nome.lower()
         ]
-    statuses = sorted({p.status for p in gestor.listar_propostas()})
+
+
+    statuses = sorted({p.status for p in todas_propostas})
+
+    total_propostas = len(todas_propostas)
+    total_clientes = len(gestor.listar_clientes())
+    propostas_aceitas = [p for p in todas_propostas if p.status == "aceita"]
+    qtd_aceitas = len(propostas_aceitas)
+    valor_total_aceitas = sum(p.calcular_total() for p in propostas_aceitas)
 
     return render_template(
         "index.html",
@@ -134,7 +143,12 @@ def index():
         filtro_q=q,
         filtro_status=status,
         statuses=statuses,
+        total_propostas=total_propostas,
+        total_clientes=total_clientes,
+        qtd_aceitas=qtd_aceitas,
+        valor_total_aceitas=valor_total_aceitas,
     )
+
 
 
 
@@ -291,6 +305,26 @@ def excluir_proposta(pid: int):
 
     flash(f"Proposta #{pid} excluída com sucesso.", "success")
     return redirect(url_for("index"))
+
+
+@app.route("/propostas/<int:pid>/enviar", methods=["POST"])
+@login_required
+def enviar_proposta(pid: int):
+    proposta = next((p for p in gestor.propostas if p.id == pid), None)
+    if not proposta:
+        flash("Proposta não encontrada.", "error")
+        return redirect(url_for("index"))
+
+    if proposta.status in ["enviada", "aceita", "recusada", "cancelada"]:
+        flash(f"A Proposta #{pid} já está com status '{proposta.status}'.", "info")
+        return redirect(url_for("index"))
+
+    proposta.alterar_status("enviada")
+    StorageManager.salvar_ou_atualizar_proposta(proposta)
+
+    flash(f"Proposta #{pid} marcada como 'enviada'.", "success")
+    return redirect(url_for("index"))
+
 
 
 @app.route("/propostas/<int:pid>/excel")
