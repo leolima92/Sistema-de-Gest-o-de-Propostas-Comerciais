@@ -1,65 +1,92 @@
 import os
+import tempfile
 from datetime import datetime
-from tempfile import NamedTemporaryFile
-from openpyxl import Workbook
-from ..models import Proposta  
 
+from openpyxl import Workbook
+from openpyxl.styles import Alignment, Font
 
 class ExcelReportGenerator:
-    @staticmethod
-    def gerar_excel_from_query(propostas, caminho: str | None = None) -> str:
-
-        if caminho is None:
-            tmp = NamedTemporaryFile(delete=False, suffix=".xlsx")
-            caminho = tmp.name
-            tmp.close()
+    @classmethod
+    def gerar_excel(cls, gestor, caminho: str | None = None) -> str:
+        if not caminho:
+            fd, caminho = tempfile.mkstemp(
+                suffix=".xlsx", prefix="dealflow_propostas_"
+            )
+            os.close(fd)
 
         wb = Workbook()
         ws = wb.active
         ws.title = "Propostas"
-        ws.append([
-            "ID",
+
+        # Cabeçalho
+        headers = [
+            "ID Proposta",
             "Título",
             "Cliente",
+            "Documento cliente",
+            "Contato cliente",
             "Status",
-            "Data Criação",
-            "Validade",
+            "Data criação",
             "Responsável",
-            "Condições de Pagamento",
-            "Subtotal",
-            "Desconto",
-            "Total",
-        ])
+            "Validade",
+            "Condições de pagamento",
+            "Subtotal (R$)",
+            "Desconto (R$)",
+            "Total (R$)",
+        ]
+        ws.append(headers)
 
-        for p in propostas:
+        # Estilo do cabeçalho
+        header_font = Font(bold=True)
+        for cell in ws[1]:
+            cell.font = header_font
+            cell.alignment = Alignment(horizontal="center")
+
+        # Linhas de dados
+        for p in gestor.listar_propostas():
             subtotal = p.calcular_subtotal()
             total = p.calcular_total()
+            desconto = subtotal - total
 
-            if p.tipo_desconto == "%":
-                desconto_str = f"{p.desconto_percentual:.2f}%"
-            elif p.tipo_desconto == "R":
-                desconto_str = f"R$ {p.desconto_valor:.2f}"
-            else:
-                desconto_str = "-"
+            data_criacao_str = (
+                p.data_criacao.strftime("%d/%m/%Y %H:%M")
+                if p.data_criacao
+                else ""
+            )
+            validade_str = (
+                p.validade.strftime("%d/%m/%Y") if p.validade else ""
+            )
 
-            ws.append([
-                p.id,
-                p.titulo,
-                p.cliente.nome if p.cliente else "",
-                p.status,
-                p.data_criacao.strftime("%Y-%m-%d %H:%M") if p.data_criacao else "",
-                p.validade.strftime("%Y-%m-%d") if p.validade else "",
-                p.responsavel or "",
-                p.condicoes_pagamento or "",
-                float(f"{subtotal:.2f}"),
-                desconto_str,
-                float(f"{total:.2f}"),
-            ])
+            ws.append(
+                [
+                    p.id,
+                    p.titulo,
+                    p.cliente.nome,
+                    p.cliente.documento,
+                    p.cliente.contato,
+                    p.status,
+                    data_criacao_str,
+                    p.responsavel or "",
+                    validade_str,
+                    p.condicoes_pagamento or "",
+                    float(subtotal),
+                    float(desconto),
+                    float(total),
+                ]
+            )
 
-        for column_cells in ws.columns:
-            length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in column_cells)
-            col_letter = column_cells[0].column_letter
-            ws.column_dimensions[col_letter].width = min(max(length + 2, 12), 40)
+
+        for col in ws.columns:
+            max_len = 0
+            col_letter = col[0].column_letter
+            for cell in col:
+                try:
+                    value = str(cell.value) if cell.value is not None else ""
+                    if len(value) > max_len:
+                        max_len = len(value)
+                except Exception:
+                    pass
+            ws.column_dimensions[col_letter].width = max(10, min(max_len + 2, 50))
 
         wb.save(caminho)
         return caminho

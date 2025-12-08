@@ -1,96 +1,70 @@
-from datetime import datetime, date
-from . import db
+from datetime import datetime
+from typing import List, Optional
+
+class Cliente:
+    _contador_id = 1
+
+    def __init__(self, nome: str, documento: str = "", contato: str = ""):
+        self.id = Cliente._contador_id
+        Cliente._contador_id += 1
+
+        self.nome = nome
+        self.documento = documento
+        self.contato = contato
+
+    def __str__(self) -> str:
+        doc = f" | Doc: {self.documento}" if self.documento else ""
+        contato = f" | Contato: {self.contato}" if self.contato else ""
+        return f"({self.id}) {self.nome}{doc}{contato}"
 
 
-class Cliente(db.Model):
-    __tablename__ = "clientes"
-
-    id = db.Column(db.Integer, primary_key=True)
-    nome = db.Column(db.String(200), nullable=False)
-    documento = db.Column(db.String(50))
-    contato = db.Column(db.String(200))
-
-    propostas = db.relationship(
-        "Proposta",
-        back_populates="cliente",
-        cascade="all, delete-orphan",
-        lazy=True,
-    )
-
-    def __repr__(self):
-        return f"<Cliente {self.id} - {self.nome}>"
-
-
-class ItemProposta(db.Model):
-    __tablename__ = "itens_proposta"
-
-    id = db.Column(db.Integer, primary_key=True)
-    proposta_id = db.Column(
-        db.Integer,
-        db.ForeignKey("propostas.id"),
-        nullable=False
-    )
-
-    descricao = db.Column(db.String(255), nullable=False)
-    quantidade = db.Column(db.Integer, nullable=False, default=1)
-    valor_unitario = db.Column(db.Float, nullable=False, default=0.0)
-
-    proposta = db.relationship("Proposta", back_populates="itens")
+class ItemProposta:
+    def __init__(self, descricao: str, quantidade: int, valor_unitario: float):
+        self.descricao = descricao
+        self.quantidade = quantidade
+        self.valor_unitario = valor_unitario
 
     @property
     def total(self) -> float:
         return self.quantidade * self.valor_unitario
 
-    def __repr__(self):
+    def __str__(self) -> str:
         return (
-            f"<ItemProposta {self.id} - {self.descricao} "
-            f"Qtd={self.quantidade} Unit={self.valor_unitario}>"
+            f"{self.descricao} | Qtd: {self.quantidade} | "
+            f"Unit: R$ {self.valor_unitario:.2f} | Total: R$ {self.total:.2f}"
         )
 
 
-class Proposta(db.Model):
-    __tablename__ = "propostas"
+class Proposta:
+    _contador_id = 1
+    STATUS_VALIDOS = ["rascunho", "enviada", "aceita", "recusada", "cancelada"]
 
-    STATUS_VALIDOS = ("rascunho", "enviada", "aceita", "recusada", "cancelada")
+    def __init__(
+        self,
+        cliente: Cliente,
+        titulo: str = "",
+        validade=None,       
+        responsavel: str = "",
+        condicoes_pagamento: str = "",
+    ):
+        self.id = Proposta._contador_id
+        Proposta._contador_id += 1
 
-    id = db.Column(db.Integer, primary_key=True)
+        self.cliente = cliente
+        self.titulo = titulo or f"Proposta {self.id}"
+        self.data_criacao = datetime.now()
+        self.status = "rascunho"
+        self.itens: List[ItemProposta] = []
+        self.validade = validade         
+        self.responsavel = responsavel
+        self.condicoes_pagamento = condicoes_pagamento
 
-    cliente_id = db.Column(
-        db.Integer,
-        db.ForeignKey("clientes.id"),
-        nullable=False
-    )
+        self.tipo_desconto = None  
+        self.desconto_percentual = 0.0
+        self.desconto_valor = 0.0
 
-    titulo = db.Column(db.String(200), nullable=False)
-    data_criacao = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    status = db.Column(db.String(20), default="rascunho", nullable=False)
-
-    validade = db.Column(db.Date, nullable=True)               
-    responsavel = db.Column(db.String(200), nullable=True)
-    condicoes_pagamento = db.Column(db.Text, nullable=True)
-    
-    tipo_desconto = db.Column(db.String(1), nullable=True)   
-    desconto_percentual = db.Column(db.Float, default=0.0)
-    desconto_valor = db.Column(db.Float, default=0.0)
-
-
-    cliente = db.relationship("Cliente", back_populates="propostas")
-
-    itens = db.relationship(
-        "ItemProposta",
-        back_populates="proposta",
-        cascade="all, delete-orphan",
-        lazy=True,
-    )
-
-    def adicionar_item(self, descricao: str, quantidade: int, valor_unitario: float):
-        item = ItemProposta(
-            proposta=self,
-            descricao=descricao,
-            quantidade=quantidade,
-            valor_unitario=valor_unitario,
-        )
-        db.session.add(item)
+    def adicionar_item(self, item: ItemProposta):
+        self.itens.append(item)
 
     def calcular_subtotal(self) -> float:
         return sum(item.total for item in self.itens)
@@ -119,14 +93,63 @@ class Proposta(db.Model):
         return max(0.0, subtotal - desconto)
 
     def alterar_status(self, novo_status: str):
-        novo_status = (novo_status or "").lower()
-        if novo_status not in self.STATUS_VALIDOS:
+        novo_status = novo_status.lower()
+        if novo_status not in Proposta.STATUS_VALIDOS:
             raise ValueError(f"Status inválido: {novo_status}")
         self.status = novo_status
 
-    def __repr__(self):
+    def __str__(self) -> str:
+        subtotal = self.calcular_subtotal()
+        total = self.calcular_total()
         return (
-            f"<Proposta {self.id} - {self.titulo} "
-            f"Cliente={self.cliente.nome if self.cliente else 'N/A'} "
-            f"Status={self.status}>"
+            f"#{self.id} - {self.titulo} | Cliente: {self.cliente.nome} | "
+            f"Status: {self.status} | Itens: {len(self.itens)} | "
+            f"Subtotal: R$ {subtotal:.2f} | Total: R$ {total:.2f}"
         )
+
+
+class GestorPropostas:
+    def __init__(self):
+        self.clientes: List[Cliente] = []
+        self.propostas: List[Proposta] = []
+
+    def criar_cliente(self, nome: str, documento: str = "", contato: str = "") -> Cliente:
+        cliente = Cliente(nome, documento, contato)
+        self.clientes.append(cliente)
+        return cliente
+
+    def listar_clientes(self) -> List[Cliente]:
+        return self.clientes
+
+    def obter_cliente_por_indice(self, indice: int) -> Optional[Cliente]:
+        if 0 <= indice < len(self.clientes):
+            return self.clientes[indice]
+        return None
+
+    # ---- Propostas ---- #
+
+    def criar_proposta(
+        self,
+        cliente: Cliente,
+        titulo: str = "",
+        validade=None,
+        responsavel: str = "",
+        condicoes_pagamento: str = "",
+    ) -> Proposta:
+        proposta = Proposta(
+            cliente,
+            titulo,
+            validade=validade,
+            responsavel=responsavel,
+            condicoes_pagamento=condicoes_pagamento,
+        )
+        self.propostas.append(proposta)
+        return proposta
+
+    def listar_propostas(self) -> List[Proposta]:
+        return self.propostas
+
+    def obter_proposta_por_indice(self, indice: int) -> Optional[Proposta]:
+        if 0 <= indice < len(self.propostas):
+            return self.propostas[indice]
+        return None

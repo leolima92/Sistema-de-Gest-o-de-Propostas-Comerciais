@@ -1,81 +1,124 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - Deal Flow{% endblock %}
+{% block title %}Dashboard · Deal Flow{% endblock %}
 
 {% block content %}
-<h1 class="mb-4">Dashboard</h1>
 
-<div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="card bg-black text-light border-secondary h-100">
-      <div class="card-body">
-        <h5 class="card-title">Clientes</h5>
-        <p class="display-6">{{ total_clientes or 0 }}</p>
-        <a href="{{ url_for('ui.listar_clientes') }}" class="btn btn-outline-light btn-sm">
-          Ver clientes
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card bg-black text-light border-secondary h-100">
-      <div class="card-body">
-        <h5 class="card-title">Propostas</h5>
-        <p class="display-6">{{ total_propostas or 0 }}</p>
-        <a href="{{ url_for('ui.listar_propostas') }}" class="btn btn-outline-light btn-sm">
-          Ver propostas
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <div class="col-md-4">
-    <div class="card bg-black text-light border-secondary h-100">
-      <div class="card-body">
-        <h5 class="card-title">Nova Proposta</h5>
-        <p class="text-muted">Crie rapidamente uma nova proposta comercial.</p>
-        <a href="{{ url_for('ui.nova_proposta') }}" class="btn btn-primary btn-sm">
-          Criar agora
-        </a>
-      </div>
-    </div>
-  </div>
+<div class="dashboard-header mb-4">
+    <h1>Dashboard</h1>
+    <p>Visão geral das suas propostas e clientes.</p>
 </div>
 
-<h2 class="h5 mb-3">Últimas propostas</h2>
-{% if propostas_recent %}
-  <div class="table-responsive">
-    <table class="table table-dark table-hover align-middle">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Título</th>
-          <th>Cliente</th>
-          <th>Status</th>
-          <th>Abertura</th>
-          <th>Total (estimado)</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in propostas_recent %}
-          <tr>
-            <td>{{ p.id }}</td>
-            <td>
-              <a href="{{ url_for('ui.detalhe_proposta', proposta_id=p.id) }}"
-                 class="link-light text-decoration-none">
-                {{ p.titulo }}
+<!-- ====== LINHA DE KPIs ====== -->
+<div class="row g-3 mb-4">
+
+    <!-- Clientes -->
+    <div class="col-md-4 col-sm-6">
+        <div class="df-kpi-card">
+            <div class="df-kpi-main">
+                <div class="df-kpi-icon bg-kpi-blue">
+                    <i class="bi bi-people"></i>
+                </div>
+                <div class="df-kpi-meta">
+                    <h3>{{ total_clientes }}</h3>
+                    <small>Clientes</small>
+                </div>
+            </div>
+            <div class="df-kpi-actions">
+                <a href="{{ url_for('ui.clientes') }}"
+                   class="btn btn-outline-secondary btn-sm">
+                    Ver clientes
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propostas cadastradas -->
+  <div class="col-md-4 col-sm-6">
+      <div class="df-kpi-card">
+          <div class="df-kpi-main">
+              <div class="df-kpi-icon bg-kpi-purple">
+                  <i class="bi bi-file-earmark-text"></i>
+              </div>
+              <div class="df-kpi-meta">
+                  <h3>{{ total_propostas }}</h3>
+                  <small>Propostas cadastradas</small>
+              </div>
+          </div>
+          <div class="df-kpi-actions">
+              <a href="{{ url_for('ui.index') }}"
+                class="btn btn-outline-secondary btn-sm">
+                  Ver propostas
               </a>
-            </td>
-            <td>{{ p.cliente.nome }}</td>
-            <td>{{ p.status }}</td>
-            <td>{{ p.data_criacao.strftime("%d/%m/%Y") }}</td>
-            <td>R$ {{ "%.2f"|format(p.calcular_total()) }}</td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+          </div>
+      </div>
   </div>
-{% else %}
-  <p class="text-muted">Nenhuma proposta cadastrada ainda.</p>
-{% endif %}
+
+
+    <!-- Valor total aceito -->
+    <div class="col-md-4 col-sm-12">
+        <div class="df-kpi-card">
+            <div class="df-kpi-main">
+                <div class="df-kpi-icon bg-kpi-green">
+                    <i class="bi bi-cash-coin"></i>
+                </div>
+                <div class="df-kpi-meta">
+                    <h3>
+                        R {{ "%.2f"|format(valor_total_aceitas)|replace(".", ",") }}
+                    </h3>
+                    <small>Valor total aceito</small>
+                </div>
+            </div>
+            <div class="df-kpi-actions">
+                <a href="{{ url_for('ui.download_excel') }}"
+                  class="btn btn-outline-secondary btn-sm">
+                    Exportar Excel
+                </a>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ====== ÚLTIMAS PROPOSTAS ====== -->
+<div id="lista-propostas" class="df-last-list mb-4">
+    <h4>Últimas propostas</h4>
+
+    {% if propostas %}
+        <ul class="list-group mt-3">
+            {% for p in propostas[:5] %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>#{{ p.id }}</strong> · {{ p.titulo }}
+                    <br>
+                    <small class="text-muted">{{ p.cliente.nome }}</small>
+                </div>
+                <div class="text-end">
+                    <span class="badge bg-info text-dark text-uppercase">
+                        {{ p.status }}
+                    </span><br>
+                    <small class="text-muted">
+                        {{ p.data_criacao.strftime("%d/%m/%Y") if p.data_criacao }}
+                    </small>
+                    <br>
+                    <a href="{{ url_for('ui.proposta_detalhe', pid=p.id) }}"
+                       class="btn btn-link btn-sm p-0 mt-1">
+                        Ver detalhes
+                    </a>
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted mt-2">Nenhuma proposta cadastrada ainda.</p>
+    {% endif %}
+</div>
+
+<!-- ====== BOTÃO RÁPIDO ====== -->
+<div class="mt-3">
+    <a href="{{ url_for('ui.nova_proposta') }}" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i>
+        Criar nova proposta
+    </a>
+</div>
+
 {% endblock %}

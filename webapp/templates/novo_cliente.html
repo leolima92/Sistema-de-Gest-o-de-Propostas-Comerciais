@@ -1,26 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Novo Cliente - Deal Flow{% endblock %}
+{% block title %}Novo cliente · Deal Flow{% endblock %}
 
 {% block content %}
-<h1 class="h4 mb-3">Novo cliente</h1>
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card df-form-card">
+            <div class="card-body">
+                <h1 class="h4 mb-3">Novo cliente</h1>
 
-<form method="post" class="card bg-black text-light border-secondary p-3">
-  <div class="mb-3">
-    <label class="form-label">Nome *</label>
-    <input type="text" name="nome" class="form-control" required>
-  </div>
+                <form method="post" action="{{ url_for('ui.novo_cliente') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <input type="text" name="nome" class="form-control" required>
+                    </div>
 
-  <div class="mb-3">
-    <label class="form-label">Documento (opcional)</label>
-    <input type="text" name="documento" class="form-control">
-  </div>
+                    <div class="mb-3">
+                        <label class="form-label">Documento (opcional)</label>
+                        <input type="text" name="documento" class="form-control">
+                    </div>
 
-  <div class="mb-3">
-    <label class="form-label">Contato (opcional)</label>
-    <input type="text" name="contato" class="form-control">
-  </div>
+                    <div class="mb-3">
+                        <label class="form-label">Contato (opcional)</label>
+                        <input type="text" name="contato" class="form-control">
+                    </div>
 
-  <button class="btn btn-primary" type="submit">Salvar</button>
-  <a href="{{ url_for('ui.listar_clientes') }}" class="btn btn-secondary ms-2">Cancelar</a>
-</form>
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('ui.clientes') }}" class="btn btn-outline-secondary">
+                            Voltar
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            Salvar cliente
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+        </div>
+    </div>
+</div>
 {% endblock %}

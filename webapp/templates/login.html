@@ -1,29 +1,41 @@
 {% extends "base.html" %}
-{% block title %}Login - Deal Flow{% endblock %}
+{% set hide_navbar = True %}
+{% block title %}Login · Deal Flow{% endblock %}
 
 {% block content %}
+<div class="df-login-hero">
+    <img src="{{ url_for('static', filename='img/logo_dark.png') }}"
+         alt="Deal Flow"
+         class="df-logo df-logo-login">
+</div>
+
 <div class="row justify-content-center">
-  <div class="col-md-4">
-    <div class="card bg-black text-light border-secondary">
-      <div class="card-body">
-        <h1 class="h4 mb-3 text-center">Entrar</h1>
-        <form method="post">
-          <div class="mb-3">
-            <label class="form-label">Usuário</label>
-            <input type="text" name="username" class="form-control" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Senha</label>
-            <input type="password" name="password" class="form-control" required>
-          </div>
-          <button class="btn btn-primary w-100" type="submit">Entrar</button>
-        </form>
-        <p class="mt-3 text-center text-muted">
-          Não tem conta?
-          <a href="{{ url_for('auth.register_view') }}">Registrar</a>
-        </p>
-      </div>
+    <div class="col-md-4">
+        <div class="card df-auth-card">
+            <div class="card-body">
+                <h1 class="h4 mb-3 text-center">Entrar no Deal Flow</h1>
+
+                <form method="post" action="{{ url_for('ui.login') }}">
+                    <div class="mb-3">
+                        <label class="form-label">Usuário</label>
+                        <input type="text" name="username" class="form-control" autofocus required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Senha</label>
+                        <input type="password" name="password" class="form-control" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        Entrar
+                    </button>
+                </form>
+
+                <p class="mt-3 mb-0 text-center small text-muted">
+                    Não tem conta?
+                    <a href="{{ url_for('ui.register') }}">Cadastrar usuário</a>
+                </p>
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 {% endblock %}

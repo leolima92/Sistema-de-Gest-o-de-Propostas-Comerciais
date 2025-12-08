@@ -1,20 +1,62 @@
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
+:root {
+    --df-bg: #ffffff;
+    --df-text: #222222;
+    --df-text-soft: #666666;
+    --df-surface: #f8f9fa;
+    --df-border: #e3e3e3;
+    --df-shadow-soft: 0 2px 4px rgba(0,0,0,0.06);
 }
 
-html, body {
-    margin: 0;
-    padding: 0;
+[data-theme="dark"] {
+    --df-bg: #1c1c1e;
+    --df-text: #f1f1f1;
+    --df-text-soft: #c7c7c7;
+    --df-surface: #2c2c2e;
+    --df-border: #3a3a3c;
+    --df-shadow-soft: 0 2px 6px rgba(0,0,0,0.3);
 }
 
-body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
-                 Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
-                 sans-serif;
-    line-height: 1.5;
-    transition: background-color 0.2s ease, color 0.2s ease;
+/* Aplica variáveis */
+body.df-body {
+    background: var(--df-bg);
+    color: var(--df-text);
+}
+
+/* Navbar */
+.df-navbar {
+    background: var(--df-surface) !important;
+    border-bottom: 1px solid var(--df-border);
+}
+
+.df-navbar .nav-link {
+    color: var(--df-text);
+}
+.df-navbar .nav-link.active {
+    font-weight: 600;
+}
+
+/* Cards / superfícies */
+.card, .df-kpi-card, .df-chart-card {
+    background: var(--df-surface);
+    border: 1px solid var(--df-border);
+    box-shadow: var(--df-shadow-soft);
+}
+
+.list-group-item {
+    background: var(--df-surface);
+    color: var(--df-text);
+    border-color: var(--df-border);
+}
+
+
+/* =========================================================
+   BASE
+   ========================================================= */
+
+body.df-body {
+    background-color: var(--df-bg);
+    color: var(--df-text);
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 a {
@@ -25,216 +67,243 @@ a:hover {
     text-decoration: underline;
 }
 
-body[data-theme="light"] {
-    background-color: #f5f5f7;
-    color: #212529;
+/* =========================================================
+   NAVBAR
+   ========================================================= */
+
+.df-navbar {
+    background-color: var(--df-bg-elevated) !important;
+    border-bottom: 1px solid var(--df-border);
+    box-shadow: 0 4px 18px rgba(15, 23, 42, 0.06);
 }
 
-body[data-theme="dark"] {
-    background-color: #050509;
-    color: #f8f9fa;
+.df-navbar .nav-link {
+    color: var(--df-text-soft);
 }
 
-main.container {
-    max-width: 1200px;
+.df-navbar .nav-link:hover,
+.df-navbar .nav-link.active {
+    color: var(--df-primary);
 }
 
-
-.navbar-dealflow {
-    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-    padding-top: 0.4rem;
-    padding-bottom: 0.4rem;
-}
-
-
-body[data-theme="light"] .navbar-dealflow {
-    background-color: #ffffff;
-    color: #212529;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-}
-
-body[data-theme="dark"] .navbar-dealflow {
-    background-color: #050509;
-    color: #f8f9fa;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-body[data-theme="light"] .navbar-dealflow .navbar-brand,
-body[data-theme="light"] .navbar-dealflow .nav-link,
-body[data-theme="light"] .navbar-dealflow .navbar-text {
-    color: #212529;
-}
-
-body[data-theme="dark"] .navbar-dealflow .navbar-brand,
-body[data-theme="dark"] .navbar-dealflow .nav-link,
-body[data-theme="dark"] .navbar-dealflow .navbar-text {
-    color: #f8f9fa;
-}
-
-.navbar-dealflow .nav-link.active,
-.navbar-dealflow .nav-link:hover {
-    text-decoration: underline;
-}
-
-.navbar-logo {
-    height: 52px;
-    width: auto;
-    display: block;
-}
-
-#theme-toggle .theme-icon {
-    font-size: 1rem;
-}
-
-
-h1, h2, h3, h4 {
-    font-weight: 600;
-}
-
-
-.card {
-    border-radius: 0.75rem;
-    transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
-}
-
-
-body[data-theme="light"] .card {
-    background-color: #ffffff !important;
-    color: #212529 !important;
-    border: 1px solid rgba(0, 0, 0, 0.08) !important;
-    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
-}
-
-
-body[data-theme="dark"] .card {
-    background-color: #111119 !important;
-    color: #f8f9fa !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-}
-
-.card-title {
-    font-weight: 600;
-}
-
-
-.btn {
+/* Botão de tema */
+#themeToggle {
+    font-size: 0.8rem;
     border-radius: 999px;
-    font-weight: 500;
-    padding-inline: 1rem;
+    padding-inline: 0.9rem;
 }
 
-body[data-theme="light"] .card .btn-outline-light,
-body[data-theme="light"] .card .btn-outline-secondary {
-    color: #212529;
-    border-color: #212529;
+/* =========================================================
+   LOGO — DEFINITIVAMENTE PEQUENA
+   ========================================================= */
+
+/* base */
+.df-logo {
+    display: block;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    object-fit: contain;
 }
 
-body[data-theme="light"] .card .btn-outline-light:hover,
-body[data-theme="light"] .card .btn-outline-secondary:hover {
-    background-color: #212529;
-    color: #ffffff;
+/* NAVBAR — força tamanho */
+.df-logo-nav {
+    height: 28px !important;
+    max-height: 28px !important;
+    width: auto !important;
 }
 
-body[data-theme="dark"] .card .btn-outline-light,
-body[data-theme="dark"] .card .btn-outline-secondary {
-    color: #f8f9fa;
-    border-color: #f8f9fa;
+/* reforço absoluto contra Bootstrap */
+.navbar-brand img.df-logo-nav,
+.navbar-brand .df-logo-nav {
+    height: 28px !important;
+    max-height: 28px !important;
+    width: auto !important;
+    object-fit: contain !important;
 }
 
-body[data-theme="dark"] .card .btn-outline-light:hover,
-body[data-theme="dark"] .card .btn-outline-secondary:hover {
-    background-color: #f8f9fa;
-    color: #111119;
+/* Logo maior em login */
+.df-logo-login {
+    height: 90px !important;
+    width: auto !important;
+    object-fit: contain !important;
+}
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .df-logo-nav {
+        height: 22px !important;
+        max-height: 22px !important;
+    }
+
+    .df-logo-login {
+        height: 70px !important;
+    }
+}
+
+/* =========================================================
+   LOGIN / REGISTER
+   ========================================================= */
+
+.df-auth-card {
+    max-width: 420px;
+    margin: 48px auto;
+    border-radius: var(--df-radius-lg);
+    border: 1px solid var(--df-border);
+    background-color: var(--df-surface);
+    box-shadow: var(--df-shadow-soft);
+}
+
+.df-auth-card h1 {
+    font-weight: 600;
+}
+
+/* =========================================================
+   FORM / BOTÕES
+   ========================================================= */
+
+.form-control {
+    border-radius: 10px;
+    background-color: var(--df-bg-elevated);
+    border-color: var(--df-border);
+    color: var(--df-text);
+}
+
+.form-control:focus {
+    border-color: var(--df-primary);
+    box-shadow: 0 0 0 1px rgba(123, 44, 191, 0.35);
 }
 
 .btn-primary {
-    border-radius: 999px;
+    background: var(--df-primary);
+    border-color: var(--df-primary);
 }
 
+.btn-primary:hover {
+    background: var(--df-primary-hover);
+    border-color: var(--df-primary-hover);
+}
 
-.table {
-    border-radius: 0.75rem;
+.btn-soft {
+    background: var(--df-primary-soft);
+    border: none;
+    color: var(--df-primary);
+}
+
+.btn-soft:hover {
+    background: rgba(123, 44, 191, 0.18);
+}
+
+/* =========================================================
+   DASHBOARD — HEADER
+   ========================================================= */
+
+.dashboard-header h1 {
+    font-weight: 600;
+}
+
+.dashboard-header p {
+    color: var(--df-text-soft);
+}
+
+/* =========================================================
+   DASHBOARD — KPI CARDS
+   ========================================================= */
+
+.df-kpi-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 18px;
+    border-radius: var(--df-radius-lg);
+    background: var(--df-surface);
+    border: 1px solid var(--df-border);
+    box-shadow: var(--df-shadow-soft);
+}
+
+.df-kpi-main {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.df-kpi-actions {
+    flex-shrink: 0;
+}
+
+.df-kpi-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    font-size: 22px;
+}
+
+.df-kpi-meta h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.df-kpi-meta small {
+    color: var(--df-text-soft);
+}
+
+/* cores */
+.bg-kpi-blue    { background: linear-gradient(135deg, #4361ee, #4895ef); }
+.bg-kpi-purple  { background: linear-gradient(135deg, #7b2cbf, #f15bb5); }
+.bg-kpi-green   { background: linear-gradient(135deg, #2a9d8f, #27ae60); }
+.bg-kpi-orange  { background: linear-gradient(135deg, #f4a261, #e76f51); }
+
+/* Responsivo */
+@media (max-width: 768px) {
+    .df-kpi-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .df-kpi-actions {
+        width: 100%;
+    }
+
+    .df-kpi-actions .btn {
+        width: 100%;
+    }
+}
+
+/* =========================================================
+   LISTAS / TABELAS
+   ========================================================= */
+
+.table.df-table {
+    background-color: var(--df-surface);
+    border-radius: var(--df-radius-md);
     overflow: hidden;
 }
 
-/* Modo claro */
-body[data-theme="light"] .table {
-    color: #212529;
-    background-color: #ffffff;
+.table.df-table thead {
+    background-color: rgba(148, 163, 184, 0.12);
+    color: var(--df-text-soft);
 }
 
-body[data-theme="light"] .table thead {
-    background-color: #f1f3f5;
+.table.df-table th,
+.table.df-table td {
+    vertical-align: middle;
+    border-color: var(--df-border);
 }
 
-body[data-theme="dark"] .table {
-    color: #f8f9fa;
-    background-color: #111119;
-}
-
-body[data-theme="dark"] .table thead {
-    background-color: #1e1e28;
-}
-
-.form-control,
-.form-select {
-    border-radius: 0.5rem;
-}
-
-/* Claro */
-body[data-theme="light"] .form-control,
-body[data-theme="light"] .form-select {
-    background-color: #ffffff;
-    color: #212529;
-    border-color: rgba(0, 0, 0, 0.16);
-}
-
-body[data-theme="light"] .form-control:focus,
-body[data-theme="light"] .form-select:focus {
-    border-color: #4f46e5;
-    box-shadow: 0 0 0 0.15rem rgba(79, 70, 229, 0.16);
-}
-
-/* Escuro */
-body[data-theme="dark"] .form-control,
-body[data-theme="dark"] .form-select {
-    background-color: #050509;
-    color: #f8f9fa;
-    border-color: rgba(255, 255, 255, 0.24);
-}
-
-body[data-theme="dark"] .form-control:focus,
-body[data-theme="dark"] .form-select:focus {
-    border-color: #8b5cf6;
-    box-shadow: 0 0 0 0.15rem rgba(139, 92, 246, 0.4);
-}
-
-
-::placeholder {
-    opacity: 0.7;
-}
-
-
-.alert {
-    border-radius: 0.75rem;
-}
-
-body[data-theme="dark"] .alert {
-    color: #f8f9fa;
-}
-
-.section-divider {
-    height: 1px;
-    background: linear-gradient(
-        to right,
-        transparent,
-        rgba(148, 163, 184, 0.6),
-        transparent
-    );
-    margin: 1.5rem 0;
-}
+/* =========================================================
+   UTILITÁRIOS
+   ========================================================= */
 
 .text-muted-soft {
-    color: rgba(148, 163, 184, 0.9) !important;
+    color: var(--df-text-soft) !important;
+}
+
+.container.py-4 {
+    padding-bottom: 3rem !important;
 }
